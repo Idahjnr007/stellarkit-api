@@ -17,6 +17,7 @@ Webhook registrations are stored in process memory. They are lost on server rest
 7. [Listing webhooks](#listing-webhooks)
 8. [Unregistration](#unregistration)
 9. [Error reference](#error-reference)
+10. [Securing deliveries](#securing-deliveries)
 
 ---
 
@@ -314,3 +315,9 @@ A second DELETE of the same ID also returns 404. Other webhooks are left untouch
 | 404 | `WebhookNotFound` | `DELETE` with an unknown `webhookId` |
 
 Your callback should respond with `2xx` within 30 seconds. Returning `4xx`/`5xx` or dropping the TCP connection counts as a failed attempt and consumes a retry.
+
+---
+
+## Securing deliveries
+
+The retry and payload sections above describe *what* StellarKit sends. To confirm a delivery really came from StellarKit and was not tampered with, verify the `X-Webhook-Signature` header on every request. See the dedicated [Webhook Security Guide](webhook-security.md) for HMAC-SHA256 details, verification examples in Node.js / Python / Go, how to handle invalid signatures, secret-storage best practices, and the dual-secret rotation pattern.
