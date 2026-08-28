@@ -6,7 +6,7 @@
 const logger = require("../utils/logger");
 const { translateHorizonError } = require("../utils/horizonErrors");
 const { mapHorizonErrorToStatus } = require("../utils/horizonStatusMapper");
-const StellaKitError = require("../utils/StellaKitError");
+const StellarKitError = require("../utils/StellarKitError");
 const {
   HORIZON_TIMEOUT_MESSAGE,
   HORIZON_TIMEOUT_SUGGESTION,
@@ -206,7 +206,7 @@ function errorHandler(err, req, res, next) {
     const status = mappedStatus ?? err.response.status ?? 400;
 
     if (isTransactionSubmissionFailure(horizonError)) {
-      const body = buildTransactionSubmissionFailedError horizonError);
+      const body = buildTransactionSubmissionFailedError(horizonError);
       logError(status, req, body.message);
       return errorResponse(res, status, withRequestId({ success: false, error: body }, req));
     }
