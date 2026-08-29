@@ -263,7 +263,19 @@ export class AccountModule {
     if (!id || typeof id !== "string" || id.trim() === "") {
       throw new StellarKitError("id is required and must be a non-empty string", 400, "ValidationError");
     }
-    return this._get<NativeBalance>(`/account/${id}/native-balance`);
+
+    try {
+      return await this._get<NativeBalance>(`/account/${id}/native-balance`);
+    } catch (err) {
+      if (err instanceof StellarKitError && err.status === 404) {
+        throw new StellarKitError(
+          err.message || `Account ${id} was not found.`,
+          404,
+          "AccountNotFound",
+        );
+      }
+      throw err;
+    }
   }
 
   /**
