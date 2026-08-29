@@ -1434,6 +1434,8 @@ router.get("/:id/history", async (req, res, next) => {
     handleAccountNotFound(err, next, req.params.id);
   }
 });
+
+/**
  * Builds a normalized { code, issuer, type } asset shape from a raw Horizon
  * effect record. Returns null when the effect carries no asset information.
  *

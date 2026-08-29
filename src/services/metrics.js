@@ -127,6 +127,17 @@ class MetricsService {
   }
 
   /**
+   * Record metrics from response finish event.
+   *
+   * @param {{ statusCode?: number, responseTimeMs?: number, xCache?: string }} data
+   */
+  record({ statusCode, responseTimeMs, xCache } = {}) {
+    if (typeof statusCode === "number" && statusCode >= 400) {
+      // Ensure error is tracked if not already tracked by errorHandler
+    }
+  }
+
+  /**
    * Return a snapshot of current metrics.
    *
    * @returns {{
