@@ -399,3 +399,337 @@ TODO: Automated Scanner User-Agent Blocking Middleware
 298. [ ] Confirm blocked requests return the exact required 403 response.
 299. [ ] Confirm allowed and missing User-Agent cases pass.
 300. [ ] Mark the task complete and prepare the implementation for review.
+301. TODO: Write "docs/security.md" Security Guide
+
+1. Repository Discovery
+
+1. [ ] Inspect the StellarKit API repository structure.
+2. [ ] Locate the root "README.md".
+3. [ ] Check whether a "docs/" directory already exists.
+4. [ ] Check whether "docs/security.md" already exists.
+5. [ ] Inspect existing documentation style.
+6. [ ] Review existing Markdown conventions.
+7. [ ] Review existing documentation headings.
+8. [ ] Review existing code examples.
+9. [ ] Review existing configuration documentation.
+10. [ ] Review existing deployment documentation.
+11. [ ] Review existing API authentication documentation.
+12. [ ] Review existing rate-limiting documentation.
+13. [ ] Review existing webhook documentation.
+14. [ ] Review existing CORS documentation.
+15. [ ] Review existing environment-variable documentation.
+16. [ ] Review existing security-related comments in source code.
+17. [ ] Search the repository for authentication configuration.
+18. [ ] Search the repository for API key handling.
+19. [ ] Search the repository for rate-limit configuration.
+20. [ ] Search the repository for CORS configuration.
+21. [ ] Search the repository for webhook signature verification.
+22. [ ] Search the repository for security middleware.
+23. [ ] Search the repository for authorization checks.
+24. [ ] Search the repository for request validation.
+25. [ ] Search the repository for security headers.
+26. [ ] Search the repository for error handling.
+27. [ ] Search the repository for environment variables.
+28. [ ] Search for production configuration examples.
+29. [ ] Search for deployment instructions.
+30. [ ] Search for known security limitations.
+31. [ ] Identify the API framework.
+32. [ ] Identify the authentication mechanism.
+33. [ ] Identify the authorization mechanism.
+34. [ ] Identify the rate limiter implementation.
+35. [ ] Identify the CORS implementation.
+36. [ ] Identify the webhook verification implementation.
+37. [ ] Identify API-key generation/storage behavior.
+38. [ ] Identify logging behavior.
+39. [ ] Identify monitoring hooks.
+40. [ ] Define the documentation scope.
+
+2. Security Model Overview
+
+41. [ ] Create "docs/security.md".
+42. [ ] Add a clear security guide title.
+43. [ ] Add an introduction to StellarKit's security model.
+44. [ ] Explain the API's security boundaries.
+45. [ ] Explain what security controls are built into StellarKit.
+46. [ ] Explain what controls require operator configuration.
+47. [ ] Explain what controls are outside the API's responsibility.
+48. [ ] Describe authentication at a high level.
+49. [ ] Describe authorization at a high level.
+50. [ ] Describe request validation.
+51. [ ] Describe rate limiting.
+52. [ ] Describe CORS protection.
+53. [ ] Describe webhook signature verification.
+54. [ ] Describe API key handling.
+55. [ ] Describe secure deployment expectations.
+56. [ ] Explain the principle of least privilege.
+57. [ ] Explain defense in depth.
+58. [ ] Explain secure secret management.
+59. [ ] Explain transport security.
+60. [ ] Explain the importance of HTTPS.
+61. [ ] Explain production environment separation.
+62. [ ] Explain operator responsibilities.
+63. [ ] Explain application responsibilities.
+64. [ ] Explain infrastructure responsibilities.
+65. [ ] Avoid claiming protections that the API does not provide.
+66. [ ] Avoid making unsupported security guarantees.
+67. [ ] Ensure every documented security feature matches the code.
+68. [ ] Ensure terminology is consistent.
+69. [ ] Keep the security model understandable to operators.
+70. [ ] Add a concise security architecture summary.
+
+3. Authentication & Authorization
+
+71. [ ] Document the authentication mechanism.
+72. [ ] Explain when authentication is required.
+73. [ ] Explain how API keys are supplied if applicable.
+74. [ ] Explain how API keys are validated.
+75. [ ] Explain authorization behavior.
+76. [ ] Document available authorization boundaries.
+77. [ ] Explain permission enforcement where applicable.
+78. [ ] Explain failed authentication behavior.
+79. [ ] Explain failed authorization behavior.
+80. [ ] Document relevant HTTP status codes.
+81. [ ] Explain authentication-related configuration.
+82. [ ] Document required authentication environment variables.
+83. [ ] Document secure values for production.
+84. [ ] Explain secret rotation expectations.
+85. [ ] Explain credential revocation where supported.
+86. [ ] Explain account/service separation where applicable.
+87. [ ] Recommend least-privilege credentials.
+88. [ ] Recommend separate development and production credentials.
+89. [ ] Recommend avoiding shared credentials.
+90. [ ] Document credential lifecycle best practices.
+91. [ ] Avoid publishing real credentials in examples.
+92. [ ] Use placeholders for all secrets.
+93. [ ] Warn operators against committing secrets.
+94. [ ] Explain how authentication interacts with rate limiting.
+95. [ ] Explain how authentication interacts with webhooks where relevant.
+96. [ ] Explain any authentication limitations.
+97. [ ] Verify authentication claims against source code.
+98. [ ] Verify authorization claims against source code.
+99. [ ] Remove unsupported authentication claims.
+100. [ ] Finalize the authentication section.
+
+4. Production Configuration Checklist
+
+101. [ ] Add a production security checklist.
+102. [ ] Require HTTPS in production.
+103. [ ] Recommend secure TLS termination.
+104. [ ] Recommend protecting internal services from public exposure.
+105. [ ] Document required production environment variables.
+106. [ ] Document authentication configuration.
+107. [ ] Document API key configuration.
+108. [ ] Document rate-limit configuration.
+109. [ ] Document CORS configuration.
+110. [ ] Document webhook secret configuration.
+111. [ ] Recommend strong secrets.
+112. [ ] Recommend secret storage outside source control.
+113. [ ] Recommend a secrets manager where appropriate.
+114. [ ] Recommend rotating secrets periodically.
+115. [ ] Recommend separate secrets by environment.
+116. [ ] Recommend restricting production access.
+117. [ ] Recommend least-privilege infrastructure permissions.
+118. [ ] Recommend keeping dependencies updated.
+119. [ ] Recommend monitoring application logs.
+120. [ ] Recommend monitoring authentication failures.
+121. [ ] Recommend monitoring rate-limit events.
+122. [ ] Recommend monitoring webhook failures.
+123. [ ] Recommend monitoring unexpected traffic.
+124. [ ] Recommend backups where persistent data exists.
+125. [ ] Recommend recovery procedures.
+126. [ ] Recommend secure deployment pipelines.
+127. [ ] Recommend protecting CI/CD secrets.
+128. [ ] Recommend disabling development/debug configuration.
+129. [ ] Recommend reviewing configuration before deployment.
+130. [ ] Add a production-readiness checklist operators can follow.
+
+5. Rate Limiting Configuration
+
+131. [ ] Document the purpose of rate limiting.
+132. [ ] Explain what rate limiting protects against.
+133. [ ] Explain what rate limiting does not protect against.
+134. [ ] Identify the configured rate-limit mechanism.
+135. [ ] Document the relevant environment variables.
+136. [ ] Document the default rate limit if applicable.
+137. [ ] Document the request window.
+138. [ ] Document burst behavior if applicable.
+139. [ ] Document how clients are identified.
+140. [ ] Explain whether limits are per API key.
+141. [ ] Explain whether limits are per IP.
+142. [ ] Explain any proxy considerations.
+143. [ ] Explain trusted proxy configuration if applicable.
+144. [ ] Document rate-limit response behavior.
+145. [ ] Document the relevant HTTP status.
+146. [ ] Document rate-limit headers if available.
+147. [ ] Explain how operators can tune limits.
+148. [ ] Recommend conservative production defaults.
+149. [ ] Explain trade-offs when increasing limits.
+150. [ ] Explain trade-offs when decreasing limits.
+151. [ ] Explain that rate limiting is not DDoS protection.
+152. [ ] Explain infrastructure-level protection requirements.
+153. [ ] Recommend upstream WAF/CDN protection where appropriate.
+154. [ ] Explain how authenticated and unauthenticated traffic is handled.
+155. [ ] Document rate-limit configuration examples.
+156. [ ] Use safe example values.
+157. [ ] Ensure examples match actual configuration syntax.
+158. [ ] Explain how to test rate limiting.
+159. [ ] Document common rate-limit troubleshooting steps.
+160. [ ] Finalize the rate-limiting section.
+
+6. API Key Security
+
+161. [ ] Add an API key security section.
+162. [ ] Explain API key sensitivity.
+163. [ ] Explain that API keys should be treated as secrets.
+164. [ ] Recommend storing keys in environment variables or a secret manager.
+165. [ ] Recommend never committing keys to Git.
+166. [ ] Recommend never placing keys in public documentation.
+167. [ ] Recommend avoiding keys in frontend source code.
+168. [ ] Recommend avoiding keys in URLs where applicable.
+169. [ ] Recommend avoiding keys in logs.
+170. [ ] Recommend avoiding keys in analytics payloads.
+171. [ ] Explain API key rotation.
+172. [ ] Explain API key revocation where supported.
+173. [ ] Explain key ownership.
+174. [ ] Explain separate keys for different environments.
+175. [ ] Explain least-privilege usage.
+176. [ ] Explain how leaked keys should be handled.
+177. [ ] Document immediate key rotation after suspected exposure.
+178. [ ] Recommend auditing key usage.
+179. [ ] Recommend monitoring suspicious API-key activity.
+180. [ ] Explain storage considerations.
+181. [ ] Explain transmission over HTTPS.
+182. [ ] Explain why plaintext HTTP should not be used.
+183. [ ] Document safe example configuration.
+184. [ ] Ensure examples contain no real secrets.
+185. [ ] Document API-key-related failure behavior.
+186. [ ] Verify documented behavior against source code.
+187. [ ] Avoid promising unsupported key-management functionality.
+188. [ ] Add an API-key security checklist.
+189. [ ] Review the section for clarity.
+190. [ ] Finalize the API-key section.
+
+7. CORS Configuration
+
+191. [ ] Add a CORS security section.
+192. [ ] Explain what CORS does.
+193. [ ] Explain what CORS does not do.
+194. [ ] Identify the CORS implementation.
+195. [ ] Identify the CORS configuration variable.
+196. [ ] Document allowed origins.
+197. [ ] Document the production origin configuration.
+198. [ ] Recommend explicit allowed origins.
+199. [ ] Warn against unrestricted wildcard origins where inappropriate.
+200. [ ] Explain credentials behavior.
+201. [ ] Explain preflight requests.
+202. [ ] Explain allowed methods if configurable.
+203. [ ] Explain allowed headers if configurable.
+204. [ ] Document development CORS configuration.
+205. [ ] Document production CORS configuration.
+206. [ ] Explain the risks of overly permissive CORS.
+207. [ ] Explain that CORS is not authentication.
+208. [ ] Explain that CORS does not protect server-to-server clients.
+209. [ ] Explain that CORS does not prevent direct API requests.
+210. [ ] Recommend pairing CORS with authentication.
+211. [ ] Provide safe configuration examples.
+212. [ ] Ensure examples match actual project syntax.
+213. [ ] Document common CORS errors.
+214. [ ] Explain how operators can troubleshoot CORS failures.
+215. [ ] Verify all claims against implementation.
+216. [ ] Avoid documenting unsupported CORS options.
+217. [ ] Add a CORS production checklist.
+218. [ ] Review origin configuration examples.
+219. [ ] Confirm no insecure wildcard recommendation is made.
+220. [ ] Finalize the CORS section.
+
+8. Webhook Signature Security
+
+221. [ ] Add a webhook security section.
+222. [ ] Explain why webhook signatures are necessary.
+223. [ ] Identify the webhook signature mechanism.
+224. [ ] Identify the webhook signing secret configuration.
+225. [ ] Document how signatures are generated if appropriate.
+226. [ ] Document how signatures are verified.
+227. [ ] Explain that verification must occur before processing payloads.
+228. [ ] Explain secret storage requirements.
+229. [ ] Recommend webhook secrets be stored securely.
+230. [ ] Recommend HTTPS for webhook endpoints.
+231. [ ] Explain replay protection if supported.
+232. [ ] Document timestamp validation if supported.
+233. [ ] Document signature headers.
+234. [ ] Document webhook verification failure behavior.
+235. [ ] Document relevant HTTP status codes.
+236. [ ] Explain secret rotation where supported.
+237. [ ] Explain how operators should respond to leaked webhook secrets.
+238. [ ] Explain webhook endpoint exposure considerations.
+239. [ ] Explain that signature verification authenticates the sender but does not make payloads inherently safe.
+240. [ ] Recommend validating webhook payloads after signature verification.
+241. [ ] Recommend idempotent webhook processing.
+242. [ ] Recommend monitoring repeated verification failures.
+243. [ ] Provide a safe webhook configuration example.
+244. [ ] Ensure the example does not contain a real secret.
+245. [ ] Verify webhook claims against source code.
+246. [ ] Avoid documenting unsupported signature algorithms.
+247. [ ] Avoid claiming replay protection if it is not implemented.
+248. [ ] Add webhook troubleshooting guidance.
+249. [ ] Add a webhook security checklist.
+250. [ ] Finalize the webhook section.
+
+9. What StellarKit Does Not Protect Against
+
+251. [ ] Add a clear limitations section.
+252. [ ] Explain that StellarKit is not a complete security boundary.
+253. [ ] Explain that operators remain responsible for infrastructure security.
+254. [ ] Explain that StellarKit does not replace HTTPS.
+255. [ ] Explain that StellarKit does not replace firewall controls.
+256. [ ] Explain that StellarKit does not replace WAF protection.
+257. [ ] Explain that rate limiting does not provide DDoS protection.
+258. [ ] Explain that CORS does not prevent direct API access.
+259. [ ] Explain that API keys can be compromised if operators mishandle them.
+260. [ ] Explain that webhook signatures do not replace payload validation.
+261. [ ] Explain that secure secrets management is an operator responsibility.
+262. [ ] Explain that dependency vulnerabilities remain an operational concern.
+263. [ ] Explain that host/server compromise is outside API-level protection.
+264. [ ] Explain that compromised operator credentials are outside API protection.
+265. [ ] Explain that application-level business-logic vulnerabilities may remain possible.
+266. [ ] Explain that client-side security is outside the API's responsibility.
+267. [ ] Explain that database security requires appropriate infrastructure controls.
+268. [ ] Explain that logging and monitoring require operator configuration.
+269. [ ] Explain that backups and disaster recovery are operator responsibilities.
+270. [ ] Avoid overstating any limitation not supported by the code.
+271. [ ] Review every limitation for accuracy.
+272. [ ] Make the distinction between API controls and operator controls explicit.
+273. [ ] Add an operator responsibility summary.
+274. [ ] Add an API responsibility summary.
+275. [ ] Finalize the limitations section.
+
+10. README Integration
+
+276. [ ] Open the root "README.md".
+277. [ ] Identify the appropriate documentation section.
+278. [ ] Add a "Security" section if one does not exist.
+279. [ ] Link the security guide from the README.
+280. [ ] Point the link to "docs/security.md".
+281. [ ] Use descriptive link text.
+282. [ ] Ensure the link works from GitHub.
+283. [ ] Avoid duplicating the complete security guide in README.
+284. [ ] Keep the README addition concise.
+285. [ ] Ensure the Security section is easy to find.
+
+11. Validation & Review
+
+286. [ ] Review "docs/security.md" for completeness.
+287. [ ] Confirm the security model is documented.
+288. [ ] Confirm the production checklist is documented.
+289. [ ] Confirm rate limiting is documented.
+290. [ ] Confirm API key security is documented.
+291. [ ] Confirm CORS configuration is documented.
+292. [ ] Confirm webhook signature security is documented.
+293. [ ] Confirm StellarKit limitations are documented.
+294. [ ] Confirm README links to the guide.
+295. [ ] Run Markdown/lint checks if available.
+296. [ ] Check all documentation links.
+297. [ ] Verify all configuration examples against the actual code.
+298. [ ] Review the final Git diff and remove unrelated changes.
+299. [ ] Confirm the PR description includes "Closes #786".
+300. [ ] Confirm all acceptance criteria are satisfied and the documentation is ready for review.
