@@ -129,6 +129,17 @@ export interface FeeTier {
   description?: string
 }
 
+/** Fee percentiles response data */
+export interface FeePercentiles {
+  p10: number
+  p50: number
+  p90: number
+  p95: number
+  p99: number
+  lastLedgerBaseFee: number
+  ledgerCapacityUsage: number
+}
+
 /** Ledger information */
 export interface LedgerInfo {
   sequence: number
@@ -383,6 +394,12 @@ export interface OperationHistoryResponse {
 export interface FeeEstimateResponse {
   success: true
   data: {
+    baseFeeStroops: number
+    baseFeeXLM: StellarAmount
+    p50: FeeTier
+    p95: FeeTier
+    isSurge: boolean
+    lastLedgerSequence: number | null
     note: string
     operationCount: number
     perOperation: {
@@ -425,6 +442,12 @@ export interface NetworkStatusResponse {
   data: {
     network: string
     horizonUrl: string
+    horizonVersion: string | null
+    coreVersion: string | null
+    networkPassphrase: string | null
+    currentLedger: number | null
+    historyLatestLedger: number | null
+    isSynced: boolean
     latestLedger: LedgerInfo
     fees: {
       baseFeeInStroops: number
@@ -479,11 +502,19 @@ export interface AssetSearchResponse {
 export interface HealthResponse {
   success: true
   data: {
-    status: string
+    status: 'ok' | 'degraded' | 'unreachable'
     service: string
     version: string
     timestamp: ISOTimestamp
     network: string
+    uptimeSeconds?: number
+    nodeVersion?: string
+    startedAt?: ISOTimestamp
+    horizon: {
+      status: 'ok' | 'degraded' | 'unreachable'
+      responseTimeMs: number
+      network: string
+    }
   }
 }
 
