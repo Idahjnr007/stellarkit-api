@@ -12,6 +12,7 @@ const { normalizeAssetFromString, normalizeAsset } = require("../utils/asset");
 const { isNativeAsset } = require("../utils/assetHelpers");
 const { formatAmount } = require("../utils/formatAmount");
 const { makeLiquidityPoolNotFoundError } = require("../utils/errors");
+const { isValidPoolId } = require("../utils/validators");
 
 function makeAssetQueryValidationError(field, value) {
   const err = new Error(
@@ -81,20 +82,13 @@ function normalizeLiquidityPoolTrade(trade) {
   }
 
   return {
-    id: trade.id,
+    tradeId: trade.id,
     ledgerCloseTime: toISOTimestamp(trade.ledger_close_time),
-    tradeType: trade.base_is_seller ? "sell" : "buy",
-    baseAccount: trade.base_account || null,
-    baseLiquidityPoolId: trade.base_liquidity_pool_id || null,
-    baseAmount: parseFloat(trade.base_amount || "0").toFixed(7),
     baseAsset: normalizeAsset(trade.base_asset_code, trade.base_asset_issuer, trade.base_asset_type),
-    counterAccount: trade.counter_account || null,
-    counterLiquidityPoolId: trade.counter_liquidity_pool_id || null,
-    counterAmount: parseFloat(trade.counter_amount || "0").toFixed(7),
     counterAsset: normalizeAsset(trade.counter_asset_code, trade.counter_asset_issuer, trade.counter_asset_type),
+    baseAmount: parseFloat(trade.base_amount || "0").toFixed(7),
+    counterAmount: parseFloat(trade.counter_amount || "0").toFixed(7),
     price,
-    baseIsSeller: trade.base_is_seller === true,
-    offerId: trade.offer_id || null,
   };
 }
 
@@ -124,10 +118,29 @@ function mapLiquidityPool(pool) {
 
 /**
  * GET /liquidity-pools/:id/trades
+ *
+ * Returns a paginated list of trades executed against a specific liquidity pool.
+ * Pool ID format is validated before querying Horizon.
+ *
+ * Response shape: { success: true, data: { trades, total, limit, cursor } }
  */
 router.get("/:id/trades", async (req, res, next) => {
   try {
     const { id } = req.params;
+
+    // Validate pool ID format (64-char lowercase hex) before hitting Horizon
+    if (!isValidPoolId(id)) {
+      const err = new Error(
+        `"${String(id).slice(0, 70)}" is not a valid liquidity pool ID. Pool IDs are 64-character hexadecimal strings.`
+      );
+      err.isValidation = true;
+      err.field = "id";
+      err.receivedValue = String(id).slice(0, 70);
+      err.expectedFormat = "64-character hexadecimal string";
+      err.status = 400;
+      return next(err);
+    }
+
     const { limit, order, cursor } = parsePaginationParams(req.query);
     const baseAssetFilter = parseAssetFilter(req.query.baseAsset, "baseAsset");
     const counterAssetFilter = parseAssetFilter(req.query.counterAsset, "counterAsset");
@@ -171,18 +184,16 @@ router.get("/:id/trades", async (req, res, next) => {
       return true;
     });
 
-
     const normalizedRecords = filteredRecords.map(normalizeLiquidityPoolTrade);
 
-
     const data = {
-      items: normalizedRecords,
+      trades: normalizedRecords,
       total: normalizedRecords.length,
       limit,
       cursor: filteredRecords.length
-      ? filteredRecords[filteredRecords.length - 1].paging_token || null
-      : null,
-};
+        ? filteredRecords[filteredRecords.length - 1].paging_token || null
+        : null,
+    };
 
     cacheService.set(cacheKey, data, cacheTTL.poolTrades);
     res.set("X-Cache", "MISS");

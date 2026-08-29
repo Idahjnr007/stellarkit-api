@@ -32,7 +32,6 @@ const coerceQueryParams = require("./middleware/coerceQueryParams");
 const etagMiddleware = require("./middleware/etag");
 const routeCounter = require("./middleware/routeCounter");
 const metricsService = require("./services/metrics");
-const routeCounter = require("./middleware/routeCounter");
 
 const networkStatusRouter = require("./routes/networkStatus");
 const webhooksRouter = require("./routes/webhooks");
@@ -55,7 +54,6 @@ const metricsRouter = require("./routes/metrics");
 const sorobanRouter = require("./routes/soroban");
 const networkRouter = require("./routes/network");
 const assetsOverviewRouter = require("./routes/assetsOverview");
-const metricsRouter = require("./routes/metrics");
 
 const app = express();
 // Disable server identification header for security
