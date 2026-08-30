@@ -48,7 +48,29 @@ try {
       }
       return body.data;
     }
-    getAccount(id) { return this._get(`/account/${id}`); }
+    async getAccount(id) {
+      if (!id || typeof id !== "string" || id.trim() === "") {
+        throw new StellarKitError("id is required and must be a non-empty string", 400, "ValidationError");
+      }
+      const url = `${this.baseUrl}/account/${encodeURIComponent(id.trim())}`;
+      const headers = { "Content-Type": "application/json", Accept: "application/json" };
+      if (this._apiKey) headers["X-API-Key"] = this._apiKey;
+      let res;
+      try {
+        res = await fetch(url, { headers });
+      } catch (networkErr) {
+        const message = networkErr instanceof Error ? networkErr.message : "Unable to reach the StellarKit API.";
+        throw new StellarKitError(`Network error while fetching account ${id}: ${message}`, 503, "NetworkError");
+      }
+      const body = await res.json();
+      if (!res.ok) {
+        if (res.status === 404) {
+          throw new StellarKitError(body?.error?.message ?? `Account ${id} was not found.`, 404, "AccountNotFound");
+        }
+        throw new StellarKitError(body?.error?.message ?? res.statusText, res.status, body?.error?.type ?? "ApiError");
+      }
+      return body.data;
+    }
     async getBalances(id) {
       if (!id || typeof id !== "string" || id.trim() === "") {
         throw new StellarKitError("id is required and must be a non-empty string", 400, "ValidationError");
@@ -362,7 +384,7 @@ describe("AccountModule", () => {
   // ── getAccount ─────────────────────────────────────────────────────────────
 
   describe("getAccount", () => {
-    it("calls GET /account/:id and resolves data", async () => {
+    it("makes a real HTTP call to GET /account/:id and returns typed Account data", async () => {
       mockFetch(200, { success: true, data: ACCOUNT_DATA });
       const data = await module.getAccount(ACCOUNT_ID);
       expect(data.accountId).toBe(ACCOUNT_ID);
@@ -371,6 +393,61 @@ describe("AccountModule", () => {
         `${BASE_URL}/account/${ACCOUNT_ID}`,
         expect.any(Object),
       );
+    });
+
+    it("throws StellarKitError with type 'AccountNotFound' on 404 response", async () => {
+      mockFetch(404, {
+        success: false,
+        error: { message: `Account ${ACCOUNT_ID} was not found.`, type: "AccountNotFound" },
+      });
+      try {
+        await module.getAccount(ACCOUNT_ID);
+        throw new Error("Expected StellarKitError to be thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(StellarKitError);
+        expect(err.status).toBe(404);
+        expect(err.type).toBe("AccountNotFound");
+        expect(err.message).toContain(ACCOUNT_ID);
+      }
+    });
+
+    it("throws StellarKitError with type 'NetworkError' on connection failure", async () => {
+      global.fetch.mockRejectedValueOnce(new TypeError("fetch failed"));
+      try {
+        await module.getAccount(ACCOUNT_ID);
+        throw new Error("Expected StellarKitError to be thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(StellarKitError);
+        expect(err.status).toBe(503);
+        expect(err.type).toBe("NetworkError");
+        expect(err.message).toContain(ACCOUNT_ID);
+      }
+    });
+
+    it("throws StellarKitError with type 'ValidationError' when id is empty", async () => {
+      try {
+        await module.getAccount("");
+        throw new Error("Expected StellarKitError to be thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(StellarKitError);
+        expect(err.status).toBe(400);
+        expect(err.type).toBe("ValidationError");
+      }
+    });
+
+    it("throws StellarKitError with type 'ValidationError' when id is whitespace", async () => {
+      await expect(module.getAccount("   ")).rejects.toThrow(StellarKitError);
+    });
+
+    it("returns correct typed Account data shape", async () => {
+      mockFetch(200, { success: true, data: ACCOUNT_DATA });
+      const data = await module.getAccount(ACCOUNT_ID);
+      expect(data).toHaveProperty("accountId");
+      expect(data).toHaveProperty("xlm");
+      expect(data).toHaveProperty("assets");
+      expect(data).toHaveProperty("signers");
+      expect(data).toHaveProperty("thresholds");
+      expect(data).toHaveProperty("flags");
     });
   });
 
