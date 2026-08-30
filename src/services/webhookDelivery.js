@@ -69,9 +69,15 @@ class WebhookDelivery {
       return [];
     }
 
+    // Filter out paused webhooks
+    const activeWebhooks = webhooks.filter((webhook) => webhook.status !== "paused");
+    if (activeWebhooks.length === 0) {
+      return [];
+    }
+
     const filteredWebhooks = payload && payload.payment
-      ? webhooks.filter((webhook) => this.matchesPaymentFilters(webhook, payload.payment))
-      : webhooks;
+      ? activeWebhooks.filter((webhook) => this.matchesPaymentFilters(webhook, payload.payment))
+      : activeWebhooks;
 
     if (filteredWebhooks.length === 0) {
       return [];
