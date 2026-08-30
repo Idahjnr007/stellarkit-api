@@ -382,6 +382,8 @@ app.get("/", (req, res) => {
         { method: "GET", path: "/soroban/contract/:id", description: "Soroban contract instance details (executable type, wasm hash)" },
         { method: "GET", path: "/soroban/contract/:id/storage", description: "Soroban contract instance-storage entries" },
         { method: "GET", path: "/soroban/contract/:id/functions", description: "Exported Soroban contract function signatures parsed from the contract ABI" },
+        { method: "GET", path: "/soroban/contract/:id/invoke-simulation", description: "Simulate a Soroban contract function invocation to estimate fees and resource usage without submitting to the network" },
+        { method: "POST", path: "/accounts/transaction-counts", description: "Batch transaction count lookup for up to 20 accounts including first and last transaction timestamps" },
         { method: "GET", path: "/liquidity-pools/:id", description: "Live Horizon liquidity pool details" },
         {
           method: "GET",

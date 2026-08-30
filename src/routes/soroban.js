@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const { scValToNative, xdr } = require("@stellar/stellar-sdk");
+const { scValToNative, xdr, TransactionBuilder, Networks, Operation, Contract, nativeToScVal, Account } = require("@stellar/stellar-sdk");
 const { sorobanServer, NETWORK } = require("../config/stellar");
 const { validateContractId, validateLimit } = require("../utils/validators");
 const { success } = require("../utils/response");
@@ -692,6 +692,184 @@ router.get("/contract/:id/dependencies", async (req, res, next) => {
     cacheService.set(cacheKey, data, CONTRACT_DEPENDENCIES_CACHE_TTL);
     res.set("X-Cache", "MISS");
     return success(res, data);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * GET /soroban/contract/:id/invoke-simulation
+ *
+ * Simulates a Soroban contract function invocation without submitting it to
+ * the network. Useful for estimating fees, checking for errors, and
+ * understanding resource consumption before committing a transaction.
+ *
+ * Uses the Stellar RPC `simulateTransaction` method internally.
+ *
+ * Path param:
+ *   - id: Soroban contract address (C... address, 56 chars)
+ *
+ * Query params:
+ *   - function (string, required) — contract function name to invoke
+ *   - args     (string, optional) — JSON-encoded array of arguments to pass to
+ *              the function. Each element is converted to an ScVal.
+ *              Supported types: string, number, boolean.
+ *              Example: ?args=["hello",42,true]
+ *
+ * Response shape:
+ *   {
+ *     success: true,
+ *     data: {
+ *       estimatedFee:   string,   // estimated fee in stroops as a string
+ *       resourceUsage:  {
+ *         cpuInstructions:  number | null,
+ *         memBytes:         number | null,
+ *         ledgerReadBytes:  number | null,
+ *         ledgerWriteBytes: number | null
+ *       },
+ *       error:          string | null,  // error message if simulation failed
+ *       success:        boolean         // true when simulation did not error
+ *     }
+ *   }
+ *
+ * Errors:
+ *   400 — missing ?function= param or invalid contract ID
+ *   500 — Soroban RPC not configured (SOROBAN_RPC_URL missing)
+ *
+ * @example
+ *   GET /soroban/contract/CCJZ5.../invoke-simulation?function=get_balance
+ *   GET /soroban/contract/CCJZ5.../invoke-simulation?function=transfer&args=["GABC...",1000]
+ */
+router.get("/contract/:id/invoke-simulation", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    validateContractId(id);
+
+    const rpcServer = requireSorobanServer();
+
+    // ── 1. Validate required ?function= param ────────────────────────────────
+    const functionName = req.query.function;
+    if (!functionName || typeof functionName !== "string" || functionName.trim() === "") {
+      throw new StellarKitError(
+        "Query parameter 'function' is required.",
+        400,
+        "ValidationError",
+        "Provide the name of the contract function to simulate.",
+        "Example: ?function=get_balance"
+      );
+    }
+
+    // ── 2. Parse optional ?args= param ───────────────────────────────────────
+    let parsedArgs = [];
+    if (req.query.args !== undefined && req.query.args !== "") {
+      try {
+        const decoded = JSON.parse(req.query.args);
+        if (!Array.isArray(decoded)) {
+          throw new StellarKitError(
+            "Query parameter 'args' must be a JSON-encoded array.",
+            400,
+            "ValidationError",
+            "args must be a JSON array, e.g. [\"value1\", 42, true]",
+            "Encode the arguments as a JSON array in the URL query string."
+          );
+        }
+        parsedArgs = decoded;
+      } catch (parseErr) {
+        if (parseErr instanceof StellarKitError) throw parseErr;
+        throw new StellarKitError(
+          "Query parameter 'args' contains invalid JSON.",
+          400,
+          "ValidationError",
+          `JSON parse error: ${parseErr.message}`,
+          "Ensure 'args' is a valid JSON array, e.g. ?args=[\"hello\",42]"
+        );
+      }
+    }
+
+    // ── 3. Convert JS args to ScVals ─────────────────────────────────────────
+    // nativeToScVal handles string, number, boolean, and bigint natively.
+    // For anything else we fall back to a string ScVal so the simulation
+    // can still proceed and the caller sees the resulting error (if any).
+    const scValArgs = parsedArgs.map((arg) => {
+      try {
+        return nativeToScVal(arg);
+      } catch (_) {
+        return nativeToScVal(String(arg));
+      }
+    });
+
+    // ── 4. Build a minimal transaction for simulation ─────────────────────────
+    // simulateTransaction requires a full TransactionEnvelope XDR.  We build
+    // a minimal placeholder transaction using a well-known testnet source
+    // account (sequence 0 is accepted by the simulator because it never
+    // lands on the ledger).
+    const SIMULATION_SOURCE = "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN";
+    const networkPassphrase =
+      NETWORK === "mainnet"
+        ? Networks.PUBLIC
+        : Networks.TESTNET;
+
+    const contract = new Contract(id);
+    const operation = contract.call(functionName.trim(), ...scValArgs);
+
+    const sourceAccount = new Account(SIMULATION_SOURCE, "0");
+    const tx = new TransactionBuilder(sourceAccount, {
+        fee: "100",
+        networkPassphrase,
+      })
+      .addOperation(operation)
+      .setTimeout(30)
+      .build();
+
+    // ── 5. Simulate ────────────────────────────────────────────────────────────
+    const simResult = await rpcServer.simulateTransaction(tx);
+
+    // ── 6. Extract results ────────────────────────────────────────────────────
+    // simulateTransaction returns { error } on simulation failure or
+    // { minResourceFee, cost, results } on success.
+    const hasError = Boolean(simResult.error);
+    const errorMessage = hasError ? String(simResult.error) : null;
+
+    // Fee: prefer minResourceFee (post-simulation recommended fee in stroops)
+    const estimatedFee = simResult.minResourceFee != null
+      ? String(simResult.minResourceFee)
+      : "0";
+
+    // Resource usage is present in simResult.cost (RestorePreamble / simulate cost)
+    const cost = simResult.cost || {};
+    const resourceUsage = {
+      cpuInstructions: cost.cpuInsns != null ? Number(cost.cpuInsns) : null,
+      memBytes: cost.memBytes != null ? Number(cost.memBytes) : null,
+      ledgerReadBytes: simResult.latestLedger != null ? null : null,
+      ledgerWriteBytes: null,
+    };
+
+    // Also try to extract from transactionData footprint when available
+    if (simResult.transactionData) {
+      try {
+        const txData = typeof simResult.transactionData === "string"
+          ? xdr.SorobanTransactionData.fromXDR(simResult.transactionData, "base64")
+          : simResult.transactionData;
+        const resources = txData.resources();
+        if (resources) {
+          resourceUsage.ledgerReadBytes = resources.readBytes != null
+            ? Number(resources.readBytes())
+            : null;
+          resourceUsage.ledgerWriteBytes = resources.writeBytes != null
+            ? Number(resources.writeBytes())
+            : null;
+        }
+      } catch (_) {
+        // transactionData parsing failure is non-fatal — leave as null
+      }
+    }
+
+    return success(res, {
+      estimatedFee,
+      resourceUsage,
+      error: errorMessage,
+      success: !hasError,
+    });
   } catch (err) {
     next(err);
   }
