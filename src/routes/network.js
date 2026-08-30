@@ -377,4 +377,72 @@ router.get("/recommended-fee", async (req, res, next) => {
   }
 });
 
+const LEDGER_TIMING_CACHE_TTL = 10;
+
+/**
+ * GET /network/ledger-timing
+ * Computes average ledger close time from the last 10 ledgers.
+ * Returns averageClosureTimeSeconds, lastLedgerSequence, lastLedgerClosedAt, expectedNextLedgerAt.
+ * Cached for 10 seconds.
+ */
+router.get("/ledger-timing", async (req, res, next) => {
+  try {
+    const cacheKey = "network-ledger-timing";
+    const fresh = isFreshRequest(req.query);
+
+    if (!fresh) {
+      const cached = cacheService.get(cacheKey);
+      if (cached) {
+        res.set("X-Cache", "HIT");
+        return success(res, cached);
+      }
+    }
+
+    const ledgerResponse = await withHorizonTiming(req, () =>
+      server.ledgers().order("desc").limit(10).call()
+    );
+    const records = ledgerResponse.records || [];
+
+    if (records.length < 2) {
+      return success(res, {
+        averageClosureTimeSeconds: 0,
+        lastLedgerSequence: records[0] ? records[0].sequence : null,
+        lastLedgerClosedAt: records[0] ? records[0].closed_at : null,
+        expectedNextLedgerAt: null,
+      });
+    }
+
+    const diffs = [];
+    for (let i = 0; i < records.length - 1; i++) {
+      const newer = new Date(records[i].closed_at).getTime();
+      const older = new Date(records[i + 1].closed_at).getTime();
+      diffs.push((newer - older) / 1000);
+    }
+
+    const averageClosureTimeSeconds = parseFloat(
+      (diffs.reduce((a, b) => a + b, 0) / diffs.length).toFixed(4)
+    );
+
+    const lastLedger = records[0];
+    const lastLedgerSequence = lastLedger.sequence;
+    const lastLedgerClosedAt = lastLedger.closed_at;
+    const expectedNextLedgerAt = new Date(
+      new Date(lastLedgerClosedAt).getTime() + averageClosureTimeSeconds * 1000
+    ).toISOString();
+
+    const data = {
+      averageClosureTimeSeconds,
+      lastLedgerSequence,
+      lastLedgerClosedAt,
+      expectedNextLedgerAt,
+    };
+
+    cacheService.set(cacheKey, data, LEDGER_TIMING_CACHE_TTL);
+    res.set("X-Cache", "MISS");
+    return success(res, data);
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

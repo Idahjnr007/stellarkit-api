@@ -73,6 +73,55 @@ function toWebhookListItem(entry) {
 }
 
 /**
+ * POST /webhooks/register
+ *
+ * Register a new webhook via the /register path.
+ * Accepts { url, events, accountId? }, validates that url is a valid https URL,
+ * stores the registration, and returns { webhookId, url, events, accountId }.
+ *
+ * Response 201:
+ *   { "success": true, "data": { "webhookId", "url", "events", "accountId" } }
+ *
+ * Response 400: invalid URL or missing required fields.
+ */
+router.post("/register", (req, res, next) => {
+  try {
+    const body = req.body || {};
+
+    if (!body.url || typeof body.url !== "string" || body.url.trim() === "") {
+      return next(new StellarKitError("url is required and must be a non-empty string.", 400, "ValidationError"));
+    }
+    if (!/^https:\/\/.+/.test(body.url.trim())) {
+      return next(new StellarKitError("url must be a valid https URL.", 400, "ValidationError"));
+    }
+    if (!Array.isArray(body.events) || body.events.length === 0) {
+      return next(new StellarKitError("events must be a non-empty array of event type strings.", 400, "ValidationError"));
+    }
+    if (body.events.some((e) => typeof e !== "string" || e.trim() === "")) {
+      return next(new StellarKitError("Each event in the events array must be a non-empty string.", 400, "ValidationError"));
+    }
+
+    const entry = webhookStore.register({
+      url: body.url.trim(),
+      events: body.events.map((e) => String(e).trim()),
+      accountId: body.accountId ? String(body.accountId).trim() : null,
+    });
+
+    return res.status(201).json({
+      success: true,
+      data: {
+        webhookId: entry.webhookId,
+        url: entry.url,
+        events: entry.events,
+        accountId: entry.accountId,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
  * POST /webhooks
  *
  * Register a new webhook. The caller provides a callback URL and the list of
