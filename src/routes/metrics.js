@@ -31,7 +31,8 @@ const { success } = require("../utils/response");
  *         "requestCount": 42
  *       },
  *       ...
- *     ]
+ *     ],
+ *     "cacheEvictions": 3
  *   }
  * }
  *
