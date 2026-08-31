@@ -80,6 +80,7 @@ function logError(status, req, message) {
 
 /**
  * Send an error response AND record the status code in the metrics service.
+ * Also tracks the error per-endpoint (route + method combination).
  *
  * @param {import('express').Response} res
  * @param {number} status
@@ -87,6 +88,19 @@ function logError(status, req, message) {
  */
 function errorResponse(res, status, body) {
   metrics.incrementError(status);
+
+  // Track error per endpoint (route + method combination)
+  const req = res.req;
+  if (req) {
+    const method = req.method;
+    // Use the Express matched route pattern when available so dynamic segments
+    // like /account/:id are grouped together rather than tracked per unique ID.
+    const routePattern = (req.route && req.route.path)
+      ? (req.baseUrl || "") + req.route.path
+      : req.path;
+    metrics.incrementErrorByEndpoint(method, routePattern, status);
+  }
+
   return res.status(status).json(body);
 }
 

@@ -57,7 +57,7 @@ function validateRegistration(body) {
  * Public list shape for a stored webhook entry.
  *
  * @param {object} entry
- * @returns {{ webhookId: string, url: string, events: string[], accountId: string|null, createdAt: string }}
+ * @returns {{ webhookId: string, url: string, events: string[], accountId: string|null, status: string, createdAt: string }}
  */
 function toWebhookListItem(entry) {
   return {
@@ -65,6 +65,7 @@ function toWebhookListItem(entry) {
     url: entry.url,
     events: entry.events,
     accountId: entry.accountId ?? null,
+    status: entry.status ?? "active",
     minAmount: entry.minAmount ?? null,
     assetCode: entry.assetCode ?? null,
     assetIssuer: entry.assetIssuer ?? null,
@@ -235,6 +236,110 @@ router.delete("/:webhookId", webhookSignatureAuth, (req, res, next) => {
     webhookStore.remove(webhookId);
 
     return success(res, { webhookId, unregistered: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /webhooks/:webhookId/pause
+ *
+ * Pause a webhook by setting its status to "paused".
+ * Paused webhooks will not receive events during delivery.
+ *
+ * Response 200 (success):
+ *   {
+ *     "success": true,
+ *     "data": {
+ *       "webhookId": "wh_...",
+ *       "status": "paused",
+ *       "url": "https://...",
+ *       "events": [...],
+ *       "createdAt": "..."
+ *     }
+ *   }
+ *
+ * Response 404 (not found):
+ *   {
+ *     "success": false,
+ *     "error": {
+ *       "type":    "WebhookNotFound",
+ *       "message": "Webhook 'wh_...' was not found."
+ *     }
+ *   }
+ */
+router.post("/:webhookId/pause", webhookSignatureAuth, (req, res, next) => {
+  try {
+    const { webhookId } = req.params;
+
+    // Verify the webhook exists before attempting to pause
+    const existing = webhookStore.find(webhookId);
+    if (!existing) {
+      return next(
+        new StellarKitError(
+          `Webhook '${webhookId}' was not found.`,
+          404,
+          "WebhookNotFound",
+          null,
+          "Verify the webhookId is correct. Use GET /webhooks to list all registered webhooks.",
+        ),
+      );
+    }
+
+    const updated = webhookStore.updateStatus(webhookId, "paused");
+    return success(res, toWebhookListItem(updated));
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /webhooks/:webhookId/resume
+ *
+ * Resume a webhook by setting its status back to "active".
+ * Resumed webhooks will receive events during delivery.
+ *
+ * Response 200 (success):
+ *   {
+ *     "success": true,
+ *     "data": {
+ *       "webhookId": "wh_...",
+ *       "status": "active",
+ *       "url": "https://...",
+ *       "events": [...],
+ *       "createdAt": "..."
+ *     }
+ *   }
+ *
+ * Response 404 (not found):
+ *   {
+ *     "success": false,
+ *     "error": {
+ *       "type":    "WebhookNotFound",
+ *       "message": "Webhook 'wh_...' was not found."
+ *     }
+ *   }
+ */
+router.post("/:webhookId/resume", webhookSignatureAuth, (req, res, next) => {
+  try {
+    const { webhookId } = req.params;
+
+    // Verify the webhook exists before attempting to resume
+    const existing = webhookStore.find(webhookId);
+    if (!existing) {
+      return next(
+        new StellarKitError(
+          `Webhook '${webhookId}' was not found.`,
+          404,
+          "WebhookNotFound",
+          null,
+          "Verify the webhookId is correct. Use GET /webhooks to list all registered webhooks.",
+        ),
+      );
+    }
+
+    const updated = webhookStore.updateStatus(webhookId, "active");
+    return success(res, toWebhookListItem(updated));
   } catch (err) {
     next(err);
   }
