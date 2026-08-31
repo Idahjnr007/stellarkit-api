@@ -54,9 +54,9 @@ const MAX_BODY_SIZE_KB = limit.kb;
 
 // Capture raw body for webhook signature verification
 const bodySizeLimit = express.json({
-  limit: requestBodySizeLimit,
+  limit: EXPRESS_LIMIT,
   verify: (req, res, buf, encoding) => {
-    req.rawBody = buf.toString(encoding || 'utf8');
+    req.rawBody = buf.toString(encoding || "utf8");
   },
 });
 
