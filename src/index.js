@@ -184,17 +184,18 @@ app.use(bodySizeLimit);
 app.use(rejectDuplicateQueryParams);
 app.use(hpp({ whitelist: ["limit", "order", "cursor", "operations"] }));
 
+// ── Metrics request counter ─────────────────────────────────────────────────
+// Count ALL requests (including /metrics) before routing
+app.use((req, res, next) => {
+  metricsService.incrementRequests();
+  next();
+});
+
 // ── Metrics (excluded from rate limiting) ───────────────────────────────────
 app.use("/metrics", metricsRouter);
 
 // ── Rate Limiting ───────────────────────────────────────────────────────────
 app.use(rateLimiter);
-
-// ── Metrics request counter ─────────────────────────────────────────────────
-app.use((req, res, next) => {
-  metricsService.incrementRequests();
-  next();
-});
 
 // ── Input Sanitization ──────────────────────────────────────────────────────
 app.use(sanitize);
