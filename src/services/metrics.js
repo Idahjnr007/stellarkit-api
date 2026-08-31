@@ -12,6 +12,9 @@
  *   - slowestEndpoints  — sorted list of the top 10 slowest endpoints by
  *                         average response time (descending), each with:
  *                         { route, method, averageResponseTimeMs, requestCount }
+ *   - cacheEvictions    — count of entries forcibly evicted from the cache
+ *                         service via `delete()`, sourced from CacheService.
+ *                         Excludes natural TTL expiry.
  *
  * Only the five status codes that operators care about most are pre-seeded
  * so the GET /metrics response is always a stable shape regardless of which
@@ -28,6 +31,8 @@
  *   metrics.recordResponseTime("GET", "/account/:id", 120);
  *   const snap = metrics.getSnapshot();
  */
+
+const cacheService = require("./cache");
 
 /** Status codes that are always present in the errorsByStatus map. */
 const TRACKED_STATUSES = [400, 404, 429, 500, 503];
@@ -232,6 +237,7 @@ class MetricsService {
       errorsByStatus: { ...this.errorsByStatus },
       errorsByEndpoint: this._computeErrorsByEndpoint(),
       slowestEndpoints: this._computeSlowestEndpoints(),
+      cacheEvictions: cacheService.evictions,
     };
   }
 }
